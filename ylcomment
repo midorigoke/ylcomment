@@ -1,0 +1,46 @@
+#!/bin/bash
+set -x
+test -f ~/.ylconfig ||
+cat >~/.ylconfig <<EOT
+apikey=""
+interval=""
+EOT
+
+. ~/.ylconfig
+
+test -z "$apikey" && {
+echo "Please get API key and write to ~/.config" >&2
+exit 1
+}
+
+videoid="$(echo -n "$1" |
+	grep '^[[:alnum:]_-]\{11\}$'
+)" || {
+	echo "Invalid Video Id" >&2
+	exit 1
+}
+
+livechatid="$(
+	curl -s "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=$videoid&key=$apikey" |
+	jq -r '.items[].liveStreamingDetails.activeLiveChatId' |
+	grep .
+)" || {
+	echo "Couldn't get Active Chat ID" >&2
+	exit 1
+}
+
+last=
+
+while true; do
+	current=$(
+		curl -s "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet,authorDetails&liveChatId=$livechatid&key=$apikey" |
+		jq -c '.items[] | ([.authorDetails.displayName, .snippet.textMessageDetails[]])' |
+		sed 's/^\["\(.*\)","\(.*\)"\]$/\1 \2/'
+	)
+
+	diff <(echo "$last") <(echo "$current") |
+	sed -n 's/^> //p'
+
+	last="$current"
+	sleep ${interval:-1}
+done
