@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 test -f ~/.ylconfig ||
 cat >~/.ylconfig <<EOT
 apikey=""
