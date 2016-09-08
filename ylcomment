@@ -8,7 +8,7 @@ EOT
 . ~/.ylconfig
 
 test -z "$apikey" && {
-echo "Please get API key and write to ~/.config" >&2
+echo "Please get API key and write to ~/.ylconfig" >&2
 exit 1
 }
 
